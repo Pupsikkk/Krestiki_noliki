@@ -1,85 +1,75 @@
-fieldSize = 3
+field_size = 3
+counter = 0
 zeroTurn = True
-my_field = [["-"] * 3 for i in range(fieldSize)]
 
 
-# Да да, можно было проще. Но я захотел функцию которая сможет обрабатывать любые размерности
+def draw_field(received_field):
+    first_line = [" "]
+    first_line.extend([i for i in range(field_size)])
+    print(*first_line)
+    for i in range(field_size):
+        print(f"{i} " + " ".join(received_field[i]))
 
 
-def draw_field(field):
-    for i in range(fieldSize + 1):
-        line = []
-        for j in range(fieldSize):
-            if i == 0:
-                if j == 0:
-                    line.append(" ")
-                line.extend([f"{s}" for s in range(0, fieldSize)])
-                break
-            if j == 0:
-                line.append(f"{i - 1}")
-            line.append(field[i - 1][j])
-        print(" ".join(line))
-
-
-def turns_controller():
-    global zeroTurn
-    if zeroTurn:
-        L = input("Ход нуля:").split()
-        if not (len(L) != 2 or int(L[0]) > fieldSize - 1 or int(L[1]) > fieldSize - 1):
-            if my_field[int(L[0])][int(L[1])] == "-":
-                my_field[int(L[0])][int(L[1])] = "O"
-                zeroTurn = False
-            else:
-                print("Поле занято. Попробуйте ещё раз!")
-        else:
+def turns_controller(received_field):
+    while True:
+        inp_inf = input("Ваш ход: ").split()
+        if len(inp_inf) != 2:
+            print("Введите две координаты")
+            continue
+        if not (inp_inf[0].isdigit() and inp_inf[0].isdigit()):
+            print("Используйте числа")
+            continue
+        x, y = map(int, inp_inf)
+        if not (0 <= x < field_size and 0 <= y < field_size):
             print("Некорректный диапазон")
-    else:
-        L = input("Ход крестика:").split()
-        if not (int(L[0]) > fieldSize - 1 or int(L[1]) > fieldSize - 1):
-            if my_field[int(L[0])][int(L[1])] == "-":
-                my_field[int(L[0])][int(L[1])] = "Х"
-                zeroTurn = True
-            else:
-                print("Поле занято. Попробуйте ещё раз!")
-        else:
-            print("Некорректный диапазон")
+            continue
+        if received_field[x][y] != "-":
+            print("Поле занято")
+            continue
+        global zeroTurn
+        received_field[x][y] = "O" if zeroTurn else "X"
+        zeroTurn = not zeroTurn
+        break
 
 
-def end_game_controller():
-    global turnsCounter
-    if (my_field[0][0] == my_field[0][1] == my_field[0][2] != "-" or
-            my_field[1][0] == my_field[1][1] == my_field[1][2] != "-" or
-            my_field[2][0] == my_field[2][1] == my_field[2][2] != "-" or
-            my_field[0][0] == my_field[1][0] == my_field[2][0] != "-" or
-            my_field[0][1] == my_field[1][1] == my_field[2][1] != "-" or
-            my_field[0][2] == my_field[1][2] == my_field[2][2] != "-" or
-            my_field[0][0] == my_field[1][1] == my_field[2][2] != "-" or
-            my_field[2][0] == my_field[1][1] == my_field[0][2] != "-"):
-        print("\n\n\nПобедил нолик!") if not zeroTurn else print("\n\n\nПобедил крестик!")
-        return False
-    if turnsCounter == 9:
+def end_game_check(received_field):
+    def check_line(a1, a2, a3):
+        if a1 == a2 == a3 != "-":
+            return True
+
+    for i in range(field_size):
+        if check_line(received_field[i][0], received_field[i][1], received_field[i][2]) or \
+                check_line(received_field[0][i], received_field[1][i], received_field[2][i]) or \
+                check_line(received_field[0][0], received_field[1][1], received_field[2][2]) or \
+                check_line(received_field[2][0], received_field[1][1], received_field[0][2]):
+            print("Победил О!!!") if not zeroTurn else print("Победил X!!!")
+            return True
+    global counter
+    if counter == 8:
         print("Ходы закончились! Победила дружба")
-        return False
-    turnsCounter += 1
-    return True
+        return True
+
+    counter += 1
+    return False
 
 
-def restart_game():
-    if input("Если хотите начать заново введите 1, если хотите выйти введите 0: ") == "0":
+def restart_check():
+    if input("Если хотите начать заново введите 1, если хотите выйти введите 0: ") == "1":
         return True
     else:
         return False
 
 
-# main
 print("Вводите координаты вот так: 0 1 ; 3 2 ; 0 0 и тд.")
-
+field = [["-"] * field_size for _ in range(field_size)]
 while True:
-    turnsCounter = 0
-    my_field = [["-"] * 3 for i in range(fieldSize)]
-    while end_game_controller():
-        draw_field(my_field)
-        turns_controller()
-    draw_field(my_field)
-    if restart_game():
-        break
+    draw_field(field)
+    turns_controller(field)
+    if end_game_check(field):
+        draw_field(field)
+        if restart_check():
+            field = [["-"] * field_size for _ in range(field_size)]
+            counter = 0
+        else:
+            break
